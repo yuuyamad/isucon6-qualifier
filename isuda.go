@@ -255,6 +255,7 @@ func keywordByKeywordHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyword := mux.Vars(r)["keyword"]
+	keyword, _ = url.QueryUnescape(keyword)
 	row := db.QueryRow(`SELECT * FROM entry WHERE keyword = ?`, keyword)
 	e := Entry{}
 	err := row.Scan(&e.ID, &e.AuthorID, &e.Keyword, &e.Description, &e.UpdatedAt, &e.CreatedAt)
@@ -309,22 +310,25 @@ func htmlify(w http.ResponseWriter, r *http.Request, content string) string {
 		return ""
 	}
 	rows, err := db.Query(`
-		SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC
+		SELECT Keyword FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC
 	`)
 	panicIf(err)
-	entries := make([]*Entry, 0, 500)
+	//entries := make([]*Entry, 0, 500)
+	keywords := make([]string, 0, 500)
+	var keyword string
 	for rows.Next() {
-		e := Entry{}
-		err := rows.Scan(&e.ID, &e.AuthorID, &e.Keyword, &e.Description, &e.UpdatedAt, &e.CreatedAt)
+		err := rows.Scan(&keyword)
 		panicIf(err)
-		entries = append(entries, &e)
+		keywords = append(keywords, regexp.QuoteMeta(keyword))
 	}
 	rows.Close()
 
+	/*
 	keywords := make([]string, 0, 500)
 	for _, entry := range entries {
 		keywords = append(keywords, regexp.QuoteMeta(entry.Keyword))
 	}
+	*/
 	re := regexp.MustCompile("("+strings.Join(keywords, "|")+")")
 	kw2sha := make(map[string]string)
 	content = re.ReplaceAllStringFunc(content, func(kw string) string {
