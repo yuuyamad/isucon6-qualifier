@@ -94,7 +94,7 @@ func topHandler(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(p)
 
 	rows, err := db.Query(fmt.Sprintf(
-		"SELECT * FROM entry ORDER BY updated_at DESC LIMIT %d OFFSET %d",
+		"SELECT keyword, description FROM entry ORDER BY updated_at DESC LIMIT %d OFFSET %d",
 		perPage, perPage*(page-1),
 	))
 	if err != nil && err != sql.ErrNoRows {
@@ -103,7 +103,7 @@ func topHandler(w http.ResponseWriter, r *http.Request) {
 	entries := make([]*Entry, 0, 10)
 	for rows.Next() {
 		e := Entry{}
-		err := rows.Scan(&e.ID, &e.AuthorID, &e.Keyword, &e.Description, &e.UpdatedAt, &e.CreatedAt)
+		err := rows.Scan(&e.Keyword, &e.Description)
 		panicIf(err)
 		e.Html = htmlify(w, r, e.Description)
 		e.Stars = loadStars(e.Keyword)
@@ -256,9 +256,9 @@ func keywordByKeywordHandler(w http.ResponseWriter, r *http.Request) {
 
 	keyword := mux.Vars(r)["keyword"]
 	keyword, _ = url.QueryUnescape(keyword)
-	row := db.QueryRow(`SELECT * FROM entry WHERE keyword = ?`, keyword)
+	row := db.QueryRow(`SELECT keyword, description FROM entry WHERE keyword = ?`, keyword)
 	e := Entry{}
-	err := row.Scan(&e.ID, &e.AuthorID, &e.Keyword, &e.Description, &e.UpdatedAt, &e.CreatedAt)
+	err := row.Scan(&e.Keyword, &e.Description)
 	if err == sql.ErrNoRows {
 		notFound(w)
 		return
