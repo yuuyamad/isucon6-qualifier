@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
+	//"regexp"
 	"strconv"
 	"strings"
 
@@ -313,27 +313,25 @@ func htmlify(w http.ResponseWriter, r *http.Request, content string) string {
 		SELECT Keyword FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC
 	`)
 	panicIf(err)
-	keywords := make([]string, 0, 500)
+	keywords := make(map[string]string)
+	replacer := make([]string, 0, 500)
 	var keyword string
 	for rows.Next() {
 		err := rows.Scan(&keyword)
 		panicIf(err)
-		keywords = append(keywords, regexp.QuoteMeta(keyword))
+		u, err := r.URL.Parse(baseUrl.String()+"/keyword/" + pathURIEscape(keyword))
+		panicIf(err)
+		keywords[keyword] = fmt.Sprintf("<a href=\"%s\">%s</a>", u, html.EscapeString(keyword))
+
+		replacer = append(replacer, keyword)
+		replacer = append(replacer, keywords[keyword])
+
 	}
 	rows.Close()
 
-	re := regexp.MustCompile("("+strings.Join(keywords, "|")+")")
+	r1 := strings.NewReplacer(replacer...)
+	content = r1.Replace(content)
 
-
-	kw2sha := make(map[string]string)
-	content = re.ReplaceAllStringFunc(content, func(kw string) string {
-		//kw2sha[kw] = "isuda_" + fmt.Sprintf("%x", sha1.Sum([]byte(kw)))
-		u, err := r.URL.Parse(baseUrl.String()+"/keyword/" + pathURIEscape(kw))
-		panicIf(err)
-		kw2sha[kw] = fmt.Sprintf("<a href=\"%s\">%s</a>", u, html.EscapeString(kw))
-		return kw2sha[kw]
-	})
-	
 	return strings.Replace(content, "\n", "<br />\n", -1)
 
 }
