@@ -439,11 +439,7 @@ func main() {
 	}
 	db.Exec("SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'")
 	db.Exec("SET NAMES utf8mb4")
-
-	//isutarEndpoint = os.Getenv("ISUTAR_ORIGIN")
-	///if isutarEndpoint == "" {
-	//	isutarEndpoint = "http://localhost:5001"
-	//}
+	
 	isupamEndpoint = os.Getenv("ISUPAM_ORIGIN")
 	if isupamEndpoint == "" {
 		isupamEndpoint = "http://localhost:5050"
